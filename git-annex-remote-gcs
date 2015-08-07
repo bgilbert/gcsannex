@@ -1,15 +1,21 @@
 #!/usr/bin/python
 
 from functools import wraps
-import googleapiclient.discovery
-import googleapiclient.errors
-import googleapiclient.http
 import inspect
 import json
-from oauth2client.client import SignedJwtAssertionCredentials
 import os
 import sys
 import traceback
+
+try:
+    import googleapiclient.discovery
+    import googleapiclient.errors
+    import googleapiclient.http
+    from oauth2client.client import SignedJwtAssertionCredentials
+    have_google_api = True
+except ImportError:
+    have_google_api = False
+
 
 class StdinClosedError(Exception):
     pass
@@ -60,6 +66,7 @@ class BaseSpecialRemote(object):
     @relay_errors('ERROR', [Exception], reraise=True)
     def run(self):
         self.send('VERSION', 1)
+        self._selftest()
         while True:
             cmd, argstr = self._recv()
             method = getattr(self, cmd.upper().lstrip('_'), None)
@@ -94,6 +101,9 @@ class BaseSpecialRemote(object):
             if argstr:
                 raise ValueError('Wrong number of arguments')
             return []
+
+    def _selftest(self):
+        pass
 
     def get(self, cmd, setting=None, default=None):
         if setting is not None:
@@ -158,6 +168,10 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self._public = None
         self._fileprefix = None
         self._service = None
+
+    def _selftest(self):
+        if not have_google_api:
+            raise ImportError('Google Cloud client library not found')
 
     def _init(self):
         if self._uuid is not None:
