@@ -79,6 +79,7 @@ class BaseSpecialRemote(object):
 
     def send(self, cmd, *args):
         self._output.write(' '.join([cmd] + [str(arg) for arg in args]) + '\n')
+        self._output.flush()
 
     def _recv(self):
         line = self._input.readline()
@@ -254,6 +255,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
         assert self._service is not None, 'Not authenticated'
         media = googleapiclient.http.MediaFileUpload(
             file,
+            mimetype='application/octet-stream',
             chunksize=self.CHUNK_SIZE,
             resumable=True,
         )
