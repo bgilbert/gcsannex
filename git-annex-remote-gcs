@@ -249,7 +249,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
                 ),
             ).execute()
         except googleapiclient.errors.HttpError, e:
-            if e.resp['status'] == '409':
+            if e.resp.status == 409:
                 # Bucket already exists, or some other conflict.
                 # Ensure we have access to the bucket.
                 self._service.buckets().get(
@@ -332,7 +332,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
             ).execute()
             self.send('CHECKPRESENT-SUCCESS', key)
         except googleapiclient.errors.HttpError, e:
-            if e.resp['status'] == '404':
+            if e.resp.status == 404:
                 self.send('CHECKPRESENT-FAILURE', key)
             else:
                 raise
@@ -346,7 +346,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
                 object=self._object_name(key),
             ).execute()
         except googleapiclient.errors.HttpError, e:
-            if e.resp['status'] != '404':
+            if e.resp.status != 404:
                 raise
         self.send('REMOVE-SUCCESS', key)
 
