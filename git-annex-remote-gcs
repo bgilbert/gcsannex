@@ -21,6 +21,7 @@
 from functools import wraps
 import inspect
 import json
+import logging
 import os
 import sys
 import traceback
@@ -354,10 +355,28 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self.send('COST', self.COST)
 
 
-if __name__ == '__main__':
+class SpecialRemoteDebugLogHandler(logging.Handler):
+    def __init__(self, remote):
+        logging.Handler.__init__(self)
+        self._remote = remote
+
+    def emit(self, record):
+        self._remote.debug(self.format(record))
+
+
+def main():
+    remote = GCSSpecialRemote()
+    # Redirect logging to git-annex debug stream.  This is necessary
+    # because googleapiclient.http logs retried requests to the root logger
+    # at WARNING level, which would otherwise go to stderr.
+    logging.getLogger().addHandler(SpecialRemoteDebugLogHandler(remote))
     try:
-        GCSSpecialRemote().run()
+        remote.run()
     except StdinClosedError:
         pass
     except Exception:
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
