@@ -23,7 +23,7 @@ import re
 from setuptools import setup
 
 def get_version():
-    pathname = os.path.join(os.path.dirname(__file__), 'git-annex-remote-gcs')
+    pathname = os.path.join(os.path.dirname(__file__), 'gcsannex.py')
     with open(pathname, encoding='utf-8') as fh:
         match = re.search('^__version__ = [\'"]([0-9.]+)[\'"]$', fh.read(),
                 re.MULTILINE)
@@ -63,7 +63,12 @@ setup(
         'google-api-python-client',
         'PyCrypto',
     ],
-    scripts=[
-        'git-annex-remote-gcs',
+    py_modules=[
+        'gcsannex',
     ],
+    entry_points={
+        'console_scripts': [
+            'git-annex-remote-gcs = gcsannex:main',
+        ],
+    },
 )

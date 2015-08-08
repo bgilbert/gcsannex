@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # gcsannex - git-annex external special remote for Google Cloud Storage
 #
@@ -385,7 +384,3 @@ def main():
         pass
     except Exception:
         sys.exit(1)
-
-
-if __name__ == '__main__':
-    main()
