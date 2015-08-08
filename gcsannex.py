@@ -255,10 +255,17 @@ class GCSSpecialRemote(BaseSpecialRemote):
         except googleapiclient.errors.HttpError, e:
             if e.resp.status == 409:
                 # Bucket already exists, or some other conflict.
-                # Ensure we have access to the bucket.
-                self._service.buckets().get(
+                # Ensure we have access to the bucket and that its
+                # configuration matches our settings.
+                metadata = self._service.buckets().get(
                     bucket=self._bucket,
                 ).execute()
+                if self._location != metadata['location']:
+                    raise ValueError('Bucket location "' +
+                            metadata['location'] + '" cannot be changed')
+                if self._storageclass != metadata['storageClass']:
+                    raise ValueError('Bucket storage class "' +
+                            metadata['storageClass'] + '" cannot be changed')
             else:
                 raise
 
