@@ -30,6 +30,7 @@ Installing
 ==========
 
 ::
+
   pip install gcsannex
 
 
@@ -56,6 +57,7 @@ Adding a remote
 ===============
 
 ::
+
   git annex initremote <remotename> type=external externaltype=gcs encryption={none|shared|pubkey|hybrid} project=<gcs-project-id>
 
 Set the ``GOOGLE_APPLICATION_CREDENTIALS`` environment variable to the
