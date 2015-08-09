@@ -177,6 +177,7 @@ class BaseSpecialRemote(object):
 
 class GCSSpecialRemote(BaseSpecialRemote):
     OAUTH_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_write'
+    PUBLIC_URL_FORMAT = 'https://storage-download.googleapis.com/{bucket}/{object}'
     COST = 200  # expensiveRemoteCost
     CHUNK_SIZE = 1 << 20
     RETRIES = 10
@@ -190,6 +191,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self._bucket = None
         self._public = None
         self._fileprefix = None
+        self._encryption = None
         self._service = None
 
     def _selftest(self):
@@ -207,6 +209,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self._bucket = self.get('GETCONFIG', 'bucket', name + '-' + self._uuid)
         self._public = self.get('GETCONFIG', 'public', '').lower() == 'yes'
         self._fileprefix = self.get('GETCONFIG', 'fileprefix', '')
+        self._encryption = self.get('GETCONFIG', 'encryption').lower()
 
     @property
     def _acl(self):
@@ -302,6 +305,9 @@ class GCSSpecialRemote(BaseSpecialRemote):
     def _object_name(self, key):
         return self._fileprefix + key
 
+    def _object_url(self, key):
+        return self.PUBLIC_URL_FORMAT.format(bucket=self._bucket, object=key)
+
     def transfer_STORE(self, key, file):
         assert self._service is not None, 'Not authenticated'
         media = googleapiclient.http.MediaFileUpload(
@@ -329,6 +335,9 @@ class GCSSpecialRemote(BaseSpecialRemote):
                 if progress - last_progress >= 0.01:
                     self.send('PROGRESS', int(progress * total_size))
                     last_progress = progress
+
+        if self._public and self._encryption == 'none':
+            self.send('SETURLPRESENT', key, self._object_url(key))
 
     def transfer_RETRIEVE(self, key, file):
         assert self._service is not None, 'Not authenticated'
@@ -368,6 +377,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
             self.send('CHECKPRESENT-SUCCESS', key)
         except googleapiclient.errors.HttpError, e:
             if e.resp.status == 404:
+                self.send('SETURLMISSING', key, self._object_url(key))
                 self.send('CHECKPRESENT-FAILURE', key)
             else:
                 raise
@@ -383,6 +393,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
         except googleapiclient.errors.HttpError, e:
             if e.resp.status != 404:
                 raise
+        self.send('SETURLMISSING', key, self._object_url(key))
         self.send('REMOVE-SUCCESS', key)
 
     def GETCOST(self):
