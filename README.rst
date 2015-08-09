@@ -103,7 +103,8 @@ Optional settings
   supported by GCS, such as ``ASIA``, ``EU``, or ``US``.  Defaults to ``US``.
 
 ``public``
-  If ``yes``, objects are made publicly readable.  Defaults to ``no``.
+  If ``yes``, newly-uploaded objects are made publicly readable.  Defaults
+  to ``no``.
 
 ``storageclass``
   A `storage class`_ supported by GCS, such as ``STANDARD``,
