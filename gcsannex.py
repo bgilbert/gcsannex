@@ -316,7 +316,8 @@ class GCSSpecialRemote(BaseSpecialRemote):
         return self._fileprefix + key
 
     def _object_url(self, key):
-        return self.PUBLIC_URL_FORMAT.format(bucket=self._bucket, object=key)
+        return self.PUBLIC_URL_FORMAT.format(bucket=self._bucket,
+                object=self._object_name(key))
 
     def transfer_STORE(self, key, file):
         assert self._service is not None, 'Not authenticated'
