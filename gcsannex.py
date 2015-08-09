@@ -209,6 +209,28 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self._fileprefix = self.get('GETCONFIG', 'fileprefix', '')
 
     @property
+    def _acl(self):
+        # Replicate projectPrivate ACL, possibly add in publicRead
+        acl = [
+            {
+                'entity': 'project-owners-' + self._project,
+                'role': 'OWNER',
+            }, {
+                'entity': 'project-editors-' + self._project,
+                'role': 'OWNER',
+            }, {
+                'entity': 'project-viewers-' + self._project,
+                'role': 'READER',
+            },
+        ]
+        if self._public:
+            acl.append({
+                'entity': 'allUsers',
+                'role': 'READER',
+            })
+        return acl
+
+    @property
     def _creds_setting(self):
         assert self._uuid is not None, 'Not initialized'
         return self._uuid + '-creds-v1'
@@ -291,7 +313,9 @@ class GCSSpecialRemote(BaseSpecialRemote):
         req = self._service.objects().insert(
             bucket=self._bucket,
             name=self._object_name(key),
-            predefinedAcl='publicRead' if self._public else 'projectPrivate',
+            body=dict(
+                acl=self._acl,
+            ),
             media_body=media,
         )
 
