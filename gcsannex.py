@@ -211,6 +211,16 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self._fileprefix = self.get('GETCONFIG', 'fileprefix', '')
         self._encryption = self.get('GETCONFIG', 'encryption').lower()
 
+        if self._public and self._encryption != 'none':
+            # Possible use case: read access is granted to a large number of
+            # people by giving them a decryption key, but write access is
+            # forbidden.  Unfortunately, the GCS APIs require authorization,
+            # either with actual credentials or with a client API key and
+            # secret (which we can't have, because we're open-source).
+            # Thus we'd have to implement anonymous reads ourselves by
+            # fetching the objects via HTTP.
+            raise ValueError('Encrypted public objects are not supported')
+
     @property
     def _acl(self):
         # Replicate projectPrivate ACL, possibly add in publicRead
