@@ -148,7 +148,7 @@ class BaseSpecialRemote(object):
             raise NoSettingError('Missing credentials: ' + setting)
         return argv
 
-    def geturls(self, key, prefix):
+    def geturls(self, key, prefix=''):
         self.send('GETURLS', key, prefix)
         urls = []
         while True:
