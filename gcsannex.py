@@ -347,9 +347,6 @@ class GCSSpecialRemote(BaseSpecialRemote):
                     self.send('PROGRESS', int(progress * total_size))
                     last_progress = progress
 
-        if self._public and self._encryption == 'none':
-            self.send('SETURLPRESENT', key, self._object_url(key))
-
     def transfer_RETRIEVE(self, key, file):
         assert self._service is not None, 'Not authenticated'
         metadata = self._service.objects().get(
@@ -388,7 +385,6 @@ class GCSSpecialRemote(BaseSpecialRemote):
             self.send('CHECKPRESENT-SUCCESS', key)
         except googleapiclient.errors.HttpError, e:
             if e.resp.status == 404:
-                self.send('SETURLMISSING', key, self._object_url(key))
                 self.send('CHECKPRESENT-FAILURE', key)
             else:
                 raise
@@ -404,7 +400,6 @@ class GCSSpecialRemote(BaseSpecialRemote):
         except googleapiclient.errors.HttpError, e:
             if e.resp.status != 404:
                 raise
-        self.send('SETURLMISSING', key, self._object_url(key))
         self.send('REMOVE-SUCCESS', key)
 
     def GETCOST(self):
