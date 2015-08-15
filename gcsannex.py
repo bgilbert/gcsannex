@@ -293,7 +293,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
                     location=self._location,
                     storageClass=self._storageclass,
                 ),
-            ).execute()
+            ).execute(num_retries=self.RETRIES)
         except googleapiclient.errors.HttpError, e:
             if e.resp.status == 409:
                 # Bucket already exists, or some other conflict.
@@ -301,7 +301,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
                 # configuration matches our settings.
                 metadata = self._service.buckets().get(
                     bucket=self._bucket,
-                ).execute()
+                ).execute(num_retries=self.RETRIES)
                 if self._location != metadata['location']:
                     raise ValueError('Bucket location "' +
                             metadata['location'] + '" cannot be changed')
@@ -376,7 +376,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
             bucket=self._bucket,
             object=self._object_name(key),
             fields='name,size',
-        ).execute()
+        ).execute(num_retries=self.RETRIES)
         total_size = int(metadata['size'])
 
         req = self._service.objects().get_media(
@@ -389,7 +389,8 @@ class GCSSpecialRemote(BaseSpecialRemote):
             done = False
             last_progress = 0
             while not done:
-                status, done = self._retry_timeout(downloader.next_chunk)
+                status, done = self._retry_timeout(
+                        lambda: downloader.next_chunk(num_retries=self.RETRIES))
                 if status:
                     progress = status.progress()
                     if progress - last_progress >= 0.01:
@@ -404,7 +405,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
                 bucket=self._bucket,
                 object=self._object_name(key),
                 fields='name',
-            ).execute()
+            ).execute(num_retries=self.RETRIES)
             self.send('CHECKPRESENT-SUCCESS', key)
         except googleapiclient.errors.HttpError, e:
             if e.resp.status == 404:
@@ -419,7 +420,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
             self._service.objects().delete(
                 bucket=self._bucket,
                 object=self._object_name(key),
-            ).execute()
+            ).execute(num_retries=self.RETRIES)
         except googleapiclient.errors.HttpError, e:
             if e.resp.status != 404:
                 raise
