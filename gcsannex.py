@@ -17,19 +17,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import division
 import argparse
 from functools import wraps
 import inspect
 import json
 import logging
 import os
+import socket
+import ssl
 import sys
+import time
 import traceback
 
 try:
     import googleapiclient.discovery
     import googleapiclient.errors
     import googleapiclient.http
+    import httplib2
     from oauth2client.client import SignedJwtAssertionCredentials
     have_google_api = True
 except ImportError:
@@ -180,6 +185,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
     PUBLIC_URL_FORMAT = 'https://storage-download.googleapis.com/{bucket}/{object}'
     COST = 200  # expensiveRemoteCost
     CHUNK_SIZE = 1 << 20
+    TIMEOUT = 30  # seconds
     RETRIES = 10
 
     def __init__(self, *args, **kwargs):
@@ -252,8 +258,9 @@ class GCSSpecialRemote(BaseSpecialRemote):
         email, escaped_private_key = self.getcreds(self._creds_setting)
         credentials = SignedJwtAssertionCredentials(email,
                 escaped_private_key.replace('*', '\n'), self.OAUTH_SCOPE)
+        http = httplib2.Http(timeout=self.TIMEOUT)
         self._service = googleapiclient.discovery.build('storage', 'v1',
-                credentials=credentials)
+                http=http, credentials=credentials)
 
     @relay_errors('INITREMOTE-FAILURE', [Exception])
     def INITREMOTE(self):
@@ -319,6 +326,21 @@ class GCSSpecialRemote(BaseSpecialRemote):
         return self.PUBLIC_URL_FORMAT.format(bucket=self._bucket,
                 object=self._object_name(key))
 
+    def _retry_timeout(self, fn):
+        for i in range(self.RETRIES + 1):
+            try:
+                return fn()
+            except (socket.timeout, ssl.SSLError), e:
+                # Timeouts under SSL look like SSLErrors, but not all
+                # SSLErrors are timeouts.  Retry, a finite number of times,
+                # with backoff.
+                if i < self.RETRIES:
+                    backoff = min(2 ** i, self.TIMEOUT // 2)
+                    self.debug('{}, retrying in {} seconds'.format(e, backoff))
+                    time.sleep(backoff)
+                else:
+                    raise
+
     def transfer_STORE(self, key, file):
         assert self._service is not None, 'Not authenticated'
         media = googleapiclient.http.MediaFileUpload(
@@ -340,7 +362,8 @@ class GCSSpecialRemote(BaseSpecialRemote):
         last_progress = 0
         total_size = os.stat(file).st_size
         while resp is None:
-            status, resp = req.next_chunk(num_retries=self.RETRIES)
+            status, resp = self._retry_timeout(
+                    lambda: req.next_chunk(num_retries=self.RETRIES))
             if status:
                 progress = status.progress()
                 if progress - last_progress >= 0.01:
@@ -366,7 +389,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
             done = False
             last_progress = 0
             while not done:
-                status, done = downloader.next_chunk()
+                status, done = self._retry_timeout(downloader.next_chunk)
                 if status:
                     progress = status.progress()
                     if progress - last_progress >= 0.01:
