@@ -197,7 +197,6 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self._bucket = None
         self._public = None
         self._fileprefix = None
-        self._encryption = None
         self._service = None
 
     def _selftest(self):
@@ -215,17 +214,6 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self._bucket = self.get('GETCONFIG', 'bucket', name + '-' + self._uuid)
         self._public = self.get('GETCONFIG', 'public', '').lower() == 'yes'
         self._fileprefix = self.get('GETCONFIG', 'fileprefix', '')
-        self._encryption = self.get('GETCONFIG', 'encryption').lower()
-
-        if self._public and self._encryption != 'none':
-            # Possible use case: read access is granted to a large number of
-            # people by giving them a decryption key, but write access is
-            # forbidden.  Unfortunately, the GCS APIs require authorization,
-            # either with actual credentials or with a client API key and
-            # secret (which we can't have, because we're open-source).
-            # Thus we'd have to implement anonymous reads ourselves by
-            # fetching the objects via HTTP.
-            raise ValueError('Encrypted public objects are not supported')
 
     @property
     def _acl(self):
@@ -370,6 +358,9 @@ class GCSSpecialRemote(BaseSpecialRemote):
                     self.send('PROGRESS', int(progress * total_size))
                     last_progress = progress
 
+        if self._public:
+            self.send('SETURLPRESENT', key, self._object_url(key))
+
     def transfer_RETRIEVE(self, key, file):
         assert self._service is not None, 'Not authenticated'
         metadata = self._service.objects().get(
@@ -409,6 +400,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
             self.send('CHECKPRESENT-SUCCESS', key)
         except googleapiclient.errors.HttpError, e:
             if e.resp.status == 404:
+                self.send('SETURLMISSING', key, self._object_url(key))
                 self.send('CHECKPRESENT-FAILURE', key)
             else:
                 raise
@@ -424,6 +416,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
         except googleapiclient.errors.HttpError, e:
             if e.resp.status != 404:
                 raise
+        self.send('SETURLMISSING', key, self._object_url(key))
         self.send('REMOVE-SUCCESS', key)
 
     def GETCOST(self):

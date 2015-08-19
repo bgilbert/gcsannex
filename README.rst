@@ -106,6 +106,11 @@ Optional settings
   If ``yes``, newly-uploaded objects are made publicly readable.  Defaults
   to ``no``.
 
+``readonly``
+  If set to ``true`` when enabling an existing ``public`` remote, files
+  can be retrieved without GCS credentials and without gcsannex installed.
+  Requires development version of git-annex.
+
 ``storageclass``
   A `storage class`_ supported by GCS, such as ``STANDARD``,
   ``DURABLE_REDUCED_AVAILABILITY``, or ``NEARLINE``.  Defaults to
