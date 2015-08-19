@@ -419,6 +419,13 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self.send('SETURLMISSING', key, self._object_url(key))
         self.send('REMOVE-SUCCESS', key)
 
+    @relay_errors('WHEREIS-FAILURE')
+    def WHEREIS(self, key):
+        if self._public:
+            self.send('WHEREIS-SUCCESS', self._object_url(key))
+        else:
+            self.send('WHEREIS-FAILURE')
+
     def GETCOST(self):
         self.send('COST', self.COST)
 
