@@ -196,6 +196,7 @@ class GCSSpecialRemote(BaseSpecialRemote):
         self._storageclass = None
         self._bucket = None
         self._public = None
+        self._everpublic = None
         self._fileprefix = None
         self._service = None
 
@@ -213,6 +214,11 @@ class GCSSpecialRemote(BaseSpecialRemote):
         name = self.get('GETCONFIG', 'name')
         self._bucket = self.get('GETCONFIG', 'bucket', name + '-' + self._uuid)
         self._public = self.get('GETCONFIG', 'public', '').lower() == 'yes'
+        if self._public:
+            self.send('SETCONFIG', '_everpublic', 'yes')
+            self._everpublic = True
+        else:
+            self._everpublic = self.get('GETCONFIG', '_everpublic', '') == 'yes'
         self._fileprefix = self.get('GETCONFIG', 'fileprefix', '')
 
     @property
@@ -400,7 +406,8 @@ class GCSSpecialRemote(BaseSpecialRemote):
             self.send('CHECKPRESENT-SUCCESS', key)
         except googleapiclient.errors.HttpError, e:
             if e.resp.status == 404:
-                self.send('SETURLMISSING', key, self._object_url(key))
+                if self._everpublic:
+                    self.send('SETURLMISSING', key, self._object_url(key))
                 self.send('CHECKPRESENT-FAILURE', key)
             else:
                 raise
@@ -416,7 +423,8 @@ class GCSSpecialRemote(BaseSpecialRemote):
         except googleapiclient.errors.HttpError, e:
             if e.resp.status != 404:
                 raise
-        self.send('SETURLMISSING', key, self._object_url(key))
+        if self._everpublic:
+            self.send('SETURLMISSING', key, self._object_url(key))
         self.send('REMOVE-SUCCESS', key)
 
     @relay_errors('WHEREIS-FAILURE')
