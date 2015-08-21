@@ -1,4 +1,7 @@
-gcsannex 0.1
-============
+Release notes
+=============
+
+Version 0.1
+-----------
 
 - Initial release

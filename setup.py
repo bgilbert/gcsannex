@@ -34,9 +34,12 @@ def get_version():
 
 
 def get_long_desc():
-    pathname = os.path.join(os.path.dirname(__file__), 'README.rst')
-    with open(pathname, encoding='utf-8') as fh:
-        return fh.read()
+    data = []
+    for filename in 'README.rst', 'NEWS.rst':
+        pathname = os.path.join(os.path.dirname(__file__), filename)
+        with open(pathname, encoding='utf-8') as fh:
+            data.append(fh.read())
+    return '\n'.join(data)
 
 
 setup(
