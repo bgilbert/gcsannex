@@ -44,8 +44,8 @@ Configuring Google Cloud Storage
 
 3. In the project's settings, go to **APIs & auth** > **Credentials**.
 
-4. Click "Create new Client ID", select "Service account", then click
-   "Create Client ID".
+4. Click "Add credentials", then "Service account".  Ensure "JSON" is
+   selected, then click "Create".
 
 5. A credentials file will be downloaded to your computer.  You will need
    this file when configuring gcsannex.
