@@ -113,9 +113,8 @@ Optional settings
   Requires development version of git-annex.
 
 ``storageclass``
-  A `storage class`_ supported by GCS, such as ``STANDARD``,
-  ``DURABLE_REDUCED_AVAILABILITY``, or ``NEARLINE``.  Defaults to
-  ``STANDARD``.
+  A `storage class`_ supported by GCS, such as ``STANDARD``, ``NEARLINE``,
+  or ``COLDLINE``.  Defaults to ``STANDARD``.
 
 .. _chunking: http://git-annex.branchable.com/chunking/
 .. _`location strings`: https://cloud.google.com/storage/docs/bucket-locations
