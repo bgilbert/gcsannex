@@ -42,10 +42,11 @@ Configuring Google Cloud Storage
 2. Create a project if you don't already have one.  Remember its
    project ID.
 
-3. In the project's settings, go to **APIs & auth** > **Credentials**.
+3. In the project's settings, go to **API Manager** > **Credentials**.
 
-4. Click "Add credentials", then "Service account".  Ensure "JSON" is
-   selected, then click "Create".
+4. Click "Create credentials", then "Service account key".  Select a
+   service account (or create a new one), ensure "JSON" is selected, then
+   click "Create".
 
 5. A credentials file will be downloaded to your computer.  You will need
    this file when configuring gcsannex.
