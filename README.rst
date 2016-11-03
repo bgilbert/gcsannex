@@ -110,7 +110,7 @@ Optional settings
 ``readonly``
   If set to ``true`` when enabling an existing ``public`` remote, files
   can be retrieved without GCS credentials and without gcsannex installed.
-  Requires development version of git-annex.
+  Requires git-annex >= 5.20150824.
 
 ``storageclass``
   A `storage class`_ supported by GCS, such as ``STANDARD``, ``NEARLINE``,
